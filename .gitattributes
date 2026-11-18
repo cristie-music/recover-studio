@@ -1,0 +1,7 @@
+* text=auto
+# cmd.exe needs CRLF in .bat (labels / goto break with LF), bash needs LF in .sh
+*.bat text eol=crlf
+*.sh  text eol=lf
+*.ipynb text eol=lf
+# third-party bundle: no diffs, not counted in language stats
+app/web/vendor/** -diff linguist-vendored

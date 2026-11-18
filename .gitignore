@@ -1,0 +1,25 @@
+# runtime: created by install.bat / install.sh, never commit
+python/
+.venv/
+models/
+projects/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+
+# audio and caches (test recordings are often copyrighted)
+samples/
+*.wav
+*.flac
+*.mp3
+*.ogg
+*.aif
+*.aiff
+*.m4a
+*.peaks.json
+*.spec.json
+*.part
+*.tmp
+python.tar.gz

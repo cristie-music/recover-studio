@@ -1,0 +1,11 @@
+# Recover Studio - Python packages (Python 3.11). PyTorch is installed separately by install.bat / install.sh /
+# the Colab notebook, with the build that matches the machine (NVIDIA CUDA / AMD ROCm / Intel XPU / Apple MPS / CPU).
+numpy==1.26.4
+scipy==1.17.1
+soundfile==0.14.0
+librosa==0.11.0
+soxr==1.1.0
+pyloudnorm==0.1.1
+PyYAML==6.0.3
+typing_extensions
+setuptools<81

@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recover Studio</title>
+  <script src="/static/vendor/tailwind.js"></script>
+  <script>
+    if (!window.tailwind) document.write('<script src="https://cdn.tailwindcss.com"><\/script>');
+  </script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { colors: { suno: { DEFAULT: '#09090b', sidebar: '#000000', panel: '#121214', card: '#18181b', border: '#27272a' } } } }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+    .seg-btn.active { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(236,72,153,0.4); }
+    .tri button.active[data-v="auto"] { background: rgba(255,255,255,0.08); color: #e4e4e7; }
+    .tri button.active[data-v="on"] { background: rgba(236,72,153,0.18); color: #f9a8d4; }
+    .tri button.active[data-v="off"] { background: rgba(255,255,255,0.04); color: #71717a; }
+    .chip.active { background: rgba(236,72,153,0.15); color: #f9a8d4; border-color: rgba(236,72,153,0.35); }
+    .navbtn.active { background: rgba(255,255,255,0.1); color: #fff; }
+    .abbtn.active { background: #fff; color: #000; }
+    .drop-hover { border-color: rgba(236,72,153,.7) !important; background: rgba(236,72,153,.06); }
+    input[type=range] { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 4px; background: #27272a; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #fff; cursor: pointer; }
+    .log-box { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; }
+    .fade-in { animation: fi .25s ease; } @keyframes fi { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
+    details > summary { list-style: none; cursor: pointer; } details > summary::-webkit-details-marker { display: none; }
+    details[open] .chev { transform: rotate(90deg); }
+  </style>
+</head>
+<body class="bg-suno text-white overflow-hidden select-none">
+
+<div class="flex flex-col h-screen w-screen overflow-hidden">
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- 1. Sidebar -->
+    <aside class="w-[220px] bg-suno-sidebar border-r border-white/5 flex flex-col justify-between p-3 flex-shrink-0">
+      <div class="space-y-6">
+        <div class="flex items-center gap-3 px-2 pt-2">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-lg font-bold text-sm">RC</div>
+          <div>
+            <div class="text-sm font-bold leading-tight">Recover Studio</div>
+            <div class="text-[10px] text-zinc-500">реставрация • мастеринг</div>
+          </div>
+        </div>
+        <nav class="space-y-1.5" id="nav">
+          <button data-view="new" onclick="setView('new')" class="navbtn w-full rounded-xl flex items-center gap-3 px-3 py-2.5 text-zinc-400 hover:text-white hover:bg-white/5 text-sm font-medium transition-colors">
+            <svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Новый трек
+          </button>
+          <button data-view="analysis" onclick="setView('analysis')" class="navbtn w-full rounded-xl flex items-center gap-3 px-3 py-2.5 text-zinc-400 hover:text-white hover:bg-white/5 text-sm font-medium transition-colors">
+            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m4 6V7m4 10v-3M4 21h16"/></svg>
+            Диагностика
+          </button>
+          <button data-view="compare" onclick="setView('compare')" class="navbtn w-full rounded-xl flex items-center gap-3 px-3 py-2.5 text-zinc-400 hover:text-white hover:bg-white/5 text-sm font-medium transition-colors">
+            <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12M8 7l4-4M8 7l4 4M16 17H4m12 0l-4-4m4 4l-4 4"/></svg>
+            Сравнение A/B
+          </button>
+          <button data-view="export" onclick="setView('export')" class="navbtn w-full rounded-xl flex items-center gap-3 px-3 py-2.5 text-zinc-400 hover:text-white hover:bg-white/5 text-sm font-medium transition-colors">
+            <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Скачать WAV
+          </button>
+          <button data-view="projects" onclick="setView('projects')" class="navbtn w-full rounded-xl flex items-center gap-3 px-3 py-2.5 text-zinc-400 hover:text-white hover:bg-white/5 text-sm font-medium transition-colors">
+            <svg class="w-5 h-5 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+            Проекты
+          </button>
+        </nav>
+      </div>
+      <div class="space-y-3">
+        <div class="p-3 rounded-xl bg-zinc-900/50 text-[11px] space-y-1.5 border border-white/5 font-mono">
+          <div class="flex justify-between text-zinc-400 gap-2"><span>Устр.</span><span id="sysKind" class="text-zinc-500">…</span></div>
+          <div class="text-zinc-300 truncate" id="sysName" title="">определение…</div>
+          <div class="flex justify-between text-zinc-400"><span>VRAM / RAM</span><span id="sysMem">—</span></div>
+          <div class="flex justify-between text-zinc-400"><span>Backend</span><span id="sysBackend" class="text-pink-400">—</span></div>
+        </div>
+        <div class="text-[10px] text-zinc-600 px-1" id="sysVersion">Recover Studio</div>
+      </div>
+    </aside>
+
+    <!-- 2. Settings panel -->
+    <section class="w-[400px] bg-suno-panel border-r border-white/5 flex flex-col flex-shrink-0 h-full overflow-y-auto">
+      <div class="p-4 pb-12 space-y-4">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Восстановление записи</span>
+          <span id="panelStatusBadge" class="text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-full font-mono">READY</span>
+        </div>
+
+        <div id="dropZone" class="bg-suno-card border-2 border-dashed border-white/10 hover:border-pink-500/50 rounded-xl p-5 text-center cursor-pointer transition-all">
+          <input type="file" id="fileInput" accept="audio/*,.flac,.wav,.mp3,.ogg,.aif,.aiff,.m4a" class="hidden">
+          <div class="text-3xl mb-1">📀</div>
+          <div class="text-sm font-semibold text-zinc-200">Перетащите старую запись или нажмите</div>
+          <div class="text-[11px] text-zinc-500 mt-1">оцифровка винила, кассеты, бобины, демо · WAV, FLAC, MP3, OGG, AIFF</div>
+          <div id="uploadBar" class="hidden mt-3 h-1.5 bg-zinc-800 rounded-full overflow-hidden"><div id="uploadFill" class="h-full bg-gradient-to-r from-orange-500 to-pink-600 w-0 transition-all"></div></div>
+        </div>
+        <div class="flex gap-2">
+          <input id="pathInput" type="text" placeholder="…или путь к файлу на диске: D:\оцифровка\side A.wav" class="flex-1 bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-[11px] text-white outline-none placeholder-zinc-600 focus:border-pink-500/50">
+          <button onclick="importPath()" class="px-3 rounded-xl text-[11px] bg-white/5 hover:bg-white/10 border border-white/10">Открыть</button>
+        </div>
+
+        <div id="trackCard" class="hidden bg-suno-card rounded-xl border border-white/5 p-3 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center text-lg flex-shrink-0">♪</div>
+          <div class="min-w-0 flex-1">
+            <div id="trackName" class="text-sm font-semibold truncate">—</div>
+            <div id="trackMeta" class="text-[11px] text-zinc-500 truncate">—</div>
+          </div>
+        </div>
+
+        <!-- source -->
+        <div class="bg-suno-card rounded-xl border border-white/5 overflow-hidden">
+          <div class="px-3 py-2 text-[11px] font-bold text-zinc-400 border-b border-white/5 uppercase flex justify-between items-center">
+            <span>Носитель</span><span id="sourceGuess" class="text-[10px] text-zinc-500 normal-case font-normal"></span>
+          </div>
+          <div id="sourceChips" class="p-2.5 flex flex-wrap gap-1.5"></div>
+          <div id="sourceAbout" class="px-3 pb-2.5 text-[10px] text-zinc-500 leading-snug"></div>
+        </div>
+
+        <!-- repair -->
+        <details open class="bg-suno-card rounded-xl border border-white/5 overflow-hidden">
+          <summary class="px-3 py-2 text-[11px] font-bold text-zinc-400 border-b border-white/5 uppercase flex justify-between items-center">
+            <span class="flex items-center gap-1.5"><span class="chev transition-transform">▸</span>1 · Ремонт</span><span class="text-[10px] text-zinc-600 normal-case font-normal">авто = по диагностике</span>
+          </summary>
+          <div id="repairMods" class="p-2.5 space-y-2"></div>
+        </details>
+
+        <!-- enhance -->
+        <details open class="bg-suno-card rounded-xl border border-white/5 overflow-hidden">
+          <summary class="px-3 py-2 text-[11px] font-bold text-zinc-400 border-b border-white/5 uppercase flex justify-between items-center">
+            <span class="flex items-center gap-1.5"><span class="chev transition-transform">▸</span>2 · Улучшение</span><span class="text-[10px] text-zinc-600 normal-case font-normal">низ, верх, тембр</span>
+          </summary>
+          <div class="p-2.5 space-y-2">
+            <div id="enhanceMods" class="space-y-2"></div>
+            <div class="rounded-lg bg-zinc-900/40 border border-white/5 p-2.5 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-semibold">Тональный баланс</span>
+                <div class="grid grid-cols-3 gap-1 w-[190px]" id="toneModeSeg">
+                  <button data-v="target" class="seg-btn active text-[10px] py-1 rounded-md border border-white/10 text-zinc-400">Эталон</button>
+                  <button data-v="reference" class="seg-btn text-[10px] py-1 rounded-md border border-white/10 text-zinc-400">Референс</button>
+                  <button data-v="off" class="seg-btn text-[10px] py-1 rounded-md border border-white/10 text-zinc-400">Выкл</button>
+                </div>
+              </div>
+              <div id="refBox" class="hidden space-y-1.5">
+                <div class="text-[10px] text-zinc-500 leading-snug">Референс — хорошо звучащая запись того же жанра (или переиздание этой же песни). Студия подгонит тембр под неё, как LANDR Reference.</div>
+                <div class="flex items-center gap-2">
+                  <input type="file" id="refInput" accept="audio/*,.flac,.wav,.mp3,.ogg,.aif,.aiff" class="hidden">
+                  <button onclick="$('refInput').click()" class="text-[11px] px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10">Загрузить референс</button>
+                  <span id="refName" class="text-[11px] text-zinc-400 truncate flex-1">не выбран</span>
+                  <button id="refDel" onclick="deleteRef()" class="hidden text-[11px] text-zinc-500 hover:text-red-400">✕</button>
+                </div>
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] text-zinc-400">Характер</span>
+                <div class="grid grid-cols-3 gap-1 w-[190px]" id="styleSeg">
+                  <button data-v="warm" class="seg-btn text-[10px] py-1 rounded-md border border-white/10 text-zinc-400">Тёплый</button>
+                  <button data-v="balanced" class="seg-btn active text-[10px] py-1 rounded-md border border-white/10 text-zinc-400">Баланс</button>
+                  <button data-v="open" class="seg-btn text-[10px] py-1 rounded-md border border-white/10 text-zinc-400">Открытый</button>
+                </div>
+              </div>
+              <label class="flex items-center justify-between gap-2"><span class="text-[11px] text-zinc-400">Сила коррекции</span>
+                <span class="flex items-center gap-2"><input id="toneAmount" type="range" min="0" max="1" step="0.05" value="0.85" class="w-28 accent-pink-500"><span id="toneAmountV" class="text-[10px] font-mono text-zinc-400 w-8 text-right">85%</span></span></label>
+            </div>
+            <details class="rounded-lg bg-zinc-900/40 border border-white/5">
+              <summary class="p-2.5 flex items-center justify-between gap-2">
+                <span class="flex items-center gap-2"><input type="checkbox" id="stemsOn" class="accent-pink-500 w-4 h-4" onclick="event.stopPropagation()"><span class="text-xs font-semibold">Баланс партий (стэмы)</span></span>
+                <span class="text-[10px] text-zinc-500">BS-RoFormer · GPU</span>
+              </summary>
+              <div class="px-2.5 pb-2.5 space-y-1.5" id="stemSliders"></div>
+            </details>
+          </div>
+        </details>
+
+        <!-- master -->
+        <details open class="bg-suno-card rounded-xl border border-white/5 overflow-hidden">
+          <summary class="px-3 py-2 text-[11px] font-bold text-zinc-400 border-b border-white/5 uppercase flex justify-between items-center">
+            <span class="flex items-center gap-1.5"><span class="chev transition-transform">▸</span>3 · Мастеринг</span><span class="text-[10px] text-zinc-600 normal-case font-normal">как в LANDR</span>
+          </summary>
+          <div class="p-2.5 space-y-2.5">
+            <label class="flex items-center justify-between"><span class="text-xs font-semibold">Мастеринг</span><input id="masterOn" type="checkbox" checked class="accent-pink-500 w-4 h-4"></label>
+            <div class="space-y-1">
+              <div class="flex justify-between text-[11px]"><span class="text-zinc-400">Интенсивность</span><span id="intHint" class="text-[10px] text-zinc-500"></span></div>
+              <div class="grid grid-cols-3 gap-1" id="intensitySeg">
+                <button data-v="low" class="seg-btn text-[11px] py-1.5 rounded-lg border border-white/10 text-zinc-400">Мягко</button>
+                <button data-v="medium" class="seg-btn active text-[11px] py-1.5 rounded-lg border border-white/10 text-zinc-400">Средне</button>
+                <button data-v="high" class="seg-btn text-[11px] py-1.5 rounded-lg border border-white/10 text-zinc-400">Громко</button>
+              </div>
+            </div>
+            <label class="flex items-center justify-between gap-2"><span class="text-[11px] text-zinc-400">Громкость</span>
+              <select id="lufsSel" class="bg-zinc-900 border border-white/10 rounded-lg px-2 py-1 text-[11px] outline-none">
+                <option value="">по интенсивности</option><option value="-18">−18 LUFS (архив, классика)</option><option value="-16">−16 LUFS (Apple Music)</option><option value="-14">−14 LUFS (Spotify, YouTube)</option><option value="-11">−11 LUFS (громко)</option><option value="-9">−9 LUFS (очень громко)</option>
+              </select></label>
+            <label class="flex items-center justify-between gap-2"><span class="text-[11px] text-zinc-400">Ширина стерео</span>
+              <span class="flex items-center gap-2"><input id="widthR" type="range" min="0.5" max="1.6" step="0.05" value="1" class="w-28 accent-pink-500"><span id="widthV" class="text-[10px] font-mono text-zinc-400 w-8 text-right">100%</span></span></label>
+          </div>
+        </details>
+
+        <!-- engine -->
+        <div class="bg-suno-card rounded-xl border border-white/5 p-3 space-y-2.5">
+          <div class="space-y-1">
+            <span class="text-[11px] text-zinc-400">Нейросети</span>
+            <div class="grid grid-cols-3 gap-1" id="engineSeg">
+              <button data-v="auto" class="seg-btn active text-[11px] py-1.5 rounded-lg border border-white/10 text-zinc-400" title="На видеокарте — нейросети, на процессоре — быстрые DSP-алгоритмы">Авто</button>
+              <button data-v="ai" class="seg-btn text-[11px] py-1.5 rounded-lg border border-white/10 text-zinc-400" title="Нейросети всегда (на CPU медленно)">Всегда</button>
+              <button data-v="dsp" class="seg-btn text-[11px] py-1.5 rounded-lg border border-white/10 text-zinc-400" title="Только DSP: быстро на любом ПК">Только DSP</button>
+            </div>
+          </div>
+          <div class="space-y-1">
+            <span class="text-[11px] text-zinc-400">Устройство</span>
+            <div class="grid grid-cols-3 gap-1" id="deviceSeg">
+              <button data-v="auto" class="seg-btn active text-[11px] py-1.5 rounded-lg border border-white/10 text-zinc-400">Авто</button>
+              <button data-v="gpu" class="seg-btn text-[11px] py-1.5 rounded-lg border border-white/10 text-zinc-400">GPU</button>
+              <button data-v="cpu" class="seg-btn text-[11px] py-1.5 rounded-lg border border-white/10 text-zinc-400">CPU</button>
+            </div>
+          </div>
+          <div id="engineNote" class="text-[10px] text-zinc-500 leading-snug"></div>
+        </div>
+
+        <div class="grid grid-cols-5 gap-2">
+          <button id="btnPreview" onclick="startRun(true)" disabled class="col-span-2 h-12 rounded-xl font-semibold text-xs bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-40 disabled:cursor-not-allowed" title="Обработать 30 секунд — послушать и подобрать настройки">▶ Превью 30 с</button>
+          <button id="btnRun" onclick="startRun(false)" disabled class="col-span-3 h-12 rounded-xl font-bold text-sm bg-gradient-to-r from-orange-500 to-pink-600 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <span id="btnRunText">Сначала выберите трек</span>
+          </button>
+        </div>
+        <label class="flex items-center justify-between gap-2 -mt-1"><span class="text-[10px] text-zinc-500">Начало превью, с (пусто = самый громкий фрагмент)</span>
+          <input id="prevStart" type="number" step="1" min="0" placeholder="авто" class="w-20 bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-xs font-mono text-right outline-none"></label>
+
+        <div id="progressBox" class="hidden p-3 rounded-xl bg-pink-500/10 border border-pink-500/20 space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-xs font-semibold text-pink-400 min-w-0">
+              <div id="progDot" class="w-2 h-2 rounded-full bg-pink-500 animate-ping flex-shrink-0"></div>
+              <span id="progTitle" class="truncate">Обработка…</span>
+            </div>
+            <button onclick="cancelRun()" class="text-[10px] text-zinc-400 hover:text-red-400 flex-shrink-0">Отменить</button>
+          </div>
+          <div class="h-1.5 bg-zinc-800 rounded-full overflow-hidden"><div id="progFill" class="h-full bg-gradient-to-r from-orange-500 to-pink-600 transition-all" style="width:0%"></div></div>
+          <div id="progStep" class="text-[11px] font-mono text-zinc-300 truncate">…</div>
+          <div id="stepList" class="space-y-1 text-[11px]"></div>
+          <button onclick="toggleLog()" class="text-[10px] text-zinc-500 hover:text-white">▸ Подробный лог</button>
+          <pre id="logBox" class="hidden log-box text-[10px] leading-snug text-zinc-400 bg-black/50 rounded-lg p-2 max-h-72 overflow-auto whitespace-pre-wrap select-text"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Main -->
+    <main class="flex-1 bg-suno flex flex-col h-full overflow-hidden p-6">
+      <div class="max-w-5xl w-full mx-auto flex flex-col h-full">
+        <div class="flex items-start justify-between mb-4 flex-shrink-0 gap-4">
+          <div class="min-w-0">
+            <h1 id="viewTitle" class="text-xl font-bold truncate">Recover Studio</h1>
+            <p id="viewSub" class="text-xs text-zinc-500">Восстановление старых записей с кассет, пластинок и плёнки</p>
+          </div>
+          <div id="kindSwitch" class="hidden grid grid-cols-2 gap-1 bg-zinc-900 p-1 rounded-xl border border-white/5 flex-shrink-0">
+            <button data-v="full" onclick="setKind('full')" class="kbtn text-[11px] px-3 py-1.5 rounded-lg text-zinc-400">Весь трек</button>
+            <button data-v="preview" onclick="setKind('preview')" class="kbtn text-[11px] px-3 py-1.5 rounded-lg text-zinc-400">Превью</button>
+          </div>
+        </div>
+        <div id="viewBody" class="flex-1 overflow-y-auto pr-2 pb-8"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 4. A/B transport -->
+  <div id="playerBar" class="hidden h-20 bg-black/95 border-t border-white/10 px-6 flex items-center justify-between flex-shrink-0 z-40 gap-6">
+    <div class="flex items-center gap-1 bg-zinc-900 p-1 rounded-xl border border-white/10 flex-shrink-0" id="abSeg">
+      <button data-v="original" onclick="setAB('original')" class="abbtn text-[11px] font-semibold px-3 py-2 rounded-lg text-zinc-300" title="Клавиша 1">A · Оригинал</button>
+      <button data-v="restored" onclick="setAB('restored')" class="abbtn text-[11px] font-semibold px-3 py-2 rounded-lg text-zinc-300" title="Клавиша 2">B · Восстановлено</button>
+      <button data-v="repaired" onclick="setAB('repaired')" class="abbtn text-[11px] font-semibold px-3 py-2 rounded-lg text-zinc-300" title="Клавиша 3">C · Только ремонт</button>
+    </div>
+    <div class="flex flex-col items-center gap-1.5 flex-1 max-w-xl">
+      <div class="flex items-center gap-4">
+        <button onclick="seekRel(-5)" class="text-zinc-500 hover:text-white text-xs">−5с</button>
+        <button onclick="togglePlay()" class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg">
+          <svg id="playIcon" class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <svg id="pauseIcon" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        </button>
+        <button onclick="seekRel(5)" class="text-zinc-500 hover:text-white text-xs">+5с</button>
+      </div>
+      <div class="flex items-center gap-3 w-full text-[11px] font-mono text-zinc-400">
+        <span id="tCur">0:00</span>
+        <input id="seekBar" type="range" min="0" max="1000" value="0" oninput="seekTo(this.value / 1000 * S.dur)" class="flex-1 accent-pink-500 cursor-pointer">
+        <span id="tDur">0:00</span>
+      </div>
+    </div>
+    <div class="flex items-center justify-end gap-3 flex-shrink-0">
+      <label class="flex items-center gap-1.5 text-[11px] text-zinc-400 cursor-pointer" title="Сравнивать на одинаковой громкости — честное A/B"><input id="matchLoud" type="checkbox" checked class="accent-pink-500" onchange="applyGains()">выровнять громкость</label>
+      <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      <input type="range" min="0" max="1" step="0.05" value="0.9" oninput="S.vol = +this.value; applyGains()" class="w-20 accent-pink-500 cursor-pointer">
+    </div>
+  </div>
+</div>
+
+<div id="textModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target===this)closeText()">
+  <div class="bg-suno-card border border-white/10 rounded-2xl w-full max-w-3xl p-6 space-y-4 shadow-2xl flex flex-col max-h-[88vh]">
+    <div class="flex items-center justify-between border-b border-white/5 pb-3">
+      <h2 id="textTitle" class="text-base font-bold text-white">Отчёт</h2>
+      <button onclick="closeText()" class="text-zinc-400 hover:text-white text-lg">✕</button>
+    </div>
+    <pre id="textBody" class="flex-1 overflow-auto text-[11px] leading-snug text-zinc-300 log-box whitespace-pre select-text"></pre>
+  </div>
+</div>
+<div id="toast" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 bg-zinc-900 border border-white/10 text-xs px-4 py-2 rounded-xl shadow-2xl z-50"></div>
+
+<script>
+// ============================================================ state
+const S = {
+  sys: null, pid: null, man: null, view: 'new', poll: null, logSince: 0, kind: 'full',
+  source: 'auto', engine: 'auto', device: 'auto', style: 'balanced', toneMode: 'target', intensity: 'medium',
+  tri: {}, ab: 'restored', vol: 0.9,
+  ctx: null, bufs: {}, gains: {}, srcs: [], playing: false, t0: 0, off: 0, dur: 0, raf: null, loadedKey: null,
+};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtT = s => { s = Math.max(0, s||0); return Math.floor(s/60) + ':' + String(Math.floor(s%60)).padStart(2,'0'); };
+const fileUrl = (rel, dl) => `/files/${S.pid}/${rel.split('/').map(encodeURIComponent).join('/')}${dl ? '?dl=1' : ''}`;
+async function api(url, opts) {
+  const r = await fetch(url, opts);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+function toast(msg, ms = 2800) {
+  const t = $('toast'); t.textContent = msg; t.classList.remove('hidden');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.add('hidden'), ms);
+}
+const SEV = ['text-zinc-400 border-zinc-600/40 bg-zinc-500/5', 'text-amber-300 border-amber-500/30 bg-amber-500/5', 'text-orange-400 border-orange-500/30 bg-orange-500/10', 'text-red-400 border-red-500/30 bg-red-500/10'];
+const SEV_DOT = ['#71717a', '#fbbf24', '#fb923c', '#f87171'];
+
+// ============================================================ module rows
+const REPAIR = [
+  { key: 'hum', title: 'Гул сети 50/60 Гц', f: ['hum'], about: 'режекторы на основной частоте и гармониках' },
+  { key: 'clicks', title: 'Щелчки', f: ['clicks'], p: { name: 'sensitivity', min: 1, max: 10, step: 0.5, def: 5, fmt: v => v }, about: 'AR-интерполяция повреждённых сэмплов' },
+  { key: 'crackle', title: 'Мелкий треск', f: ['crackle'], p: { name: 'sensitivity', min: 1, max: 10, step: 0.5, def: 4, fmt: v => v }, about: 'частый мелкий треск заезженных пластинок' },
+  { key: 'declip', title: 'Клиппинг', f: ['clip'], about: 'дорисовка срезанных пиков' },
+  { key: 'wow', title: 'Детонация (wow / flutter)', f: ['wow'], p: { name: 'strength', min: 0, max: 1.5, step: 0.05, def: 1, fmt: v => Math.round(v*100) + '%' }, about: 'выравнивание «плавающей» скорости' },
+  { key: 'azimuth', title: 'Азимут ленты', f: ['azimuth'], about: 'сводит каналы, сдвинутые головкой' },
+  { key: 'denoise', title: 'Шумоподавление', f: ['noise'], p: { name: 'amount', min: 0, max: 1, step: 0.05, def: 1, fmt: v => Math.round(v*100) + '%' }, about: 'нейросеть Mel-Band RoFormer Denoise', model: true },
+];
+const ENHANCE = [
+  { key: 'bass', title: 'Восстановление низа', f: ['thin'], p: { name: 'amount', min: 0, max: 1.5, step: 0.05, def: 1, fmt: v => Math.round(v*100) + '%' }, about: 'суббас и бочка по стэмам (GPU) или субгармоника (CPU)' },
+  { key: 'bandwidth', title: 'Верха / расширение полосы', f: ['bandwidth', 'dull'], p: { name: 'amount', min: 0, max: 1.5, step: 0.05, def: 1, fmt: v => Math.round(v*100) + '%' }, about: 'гармоники выше среза полосы' },
+  { key: 'apollo', title: 'Apollo (нейросеть)', f: ['lossy'], about: 'артефакты MP3 и кодеков, детали верхов' },
+  { key: 'guard', title: 'Контроль шума после улучшения', f: [], about: 'EQ и эксайтер не поднимают шипение и гул' },
+  { key: 'trim', title: 'Обрезка тишины и хвоста', f: ['edges'], about: 'заход иглы, прогон канавки, ракорд' },
+];
+const STEMS = [['vocals','Вокал','#ec4899'], ['drums','Ударные','#f97316'], ['bass','Бас','#8b5cf6'], ['guitar','Гитара','#eab308'], ['piano','Клавишные','#3b82f6'], ['other','Остальное','#10b981']];
+
+function modRow(m) {
+  const tri = `<div class="tri grid grid-cols-3 gap-0.5 bg-black/30 rounded-md p-0.5 flex-shrink-0" data-mod="${m.key}">
+    ${['auto','on','off'].map(v => `<button data-v="${v}" class="text-[10px] px-1.5 py-0.5 rounded text-zinc-500 hover:text-white">${{auto:'Авто',on:'Вкл',off:'Выкл'}[v]}</button>`).join('')}</div>`;
+  const par = m.p ? `<div class="flex items-center gap-2 mt-1.5 pl-0.5"><span class="text-[10px] text-zinc-500 w-14">${m.p.name === 'sensitivity' ? 'чувствит.' : m.p.name === 'strength' ? 'сила' : 'сила'}</span>
+     <input type="range" id="p_${m.key}" min="${m.p.min}" max="${m.p.max}" step="${m.p.step}" value="${m.p.def}" class="flex-1 accent-pink-500" oninput="$('pv_${m.key}').textContent = (${m.p.fmt.toString()})(+this.value)">
+     <span id="pv_${m.key}" class="text-[10px] font-mono text-zinc-400 w-9 text-right">${m.p.fmt(m.p.def)}</span></div>` : '';
+  const model = m.model ? `<div class="flex items-center gap-2 mt-1.5 pl-0.5"><span class="text-[10px] text-zinc-500 w-14">модель</span>
+     <select id="denoiseModel" class="flex-1 bg-zinc-900 border border-white/10 rounded-md px-1.5 py-0.5 text-[10px] outline-none">
+       <option value="auto">авто (по уровню шума)</option><option value="denoise">нейросеть · обычная</option><option value="denoise_aggr">нейросеть · агрессивная</option></select></div>
+     <div class="flex items-center gap-2 mt-1.5 pl-0.5"><span class="text-[10px] text-zinc-500 w-14">доочистка</span>
+     <input type="range" id="p_polish" min="0" max="12" step="1" value="0" class="flex-1 accent-pink-500" oninput="$('pv_polish').textContent = this.value + ' дБ'"><span id="pv_polish" class="text-[10px] font-mono text-zinc-400 w-9 text-right">0 дБ</span></div>` : '';
+  return `<div class="rounded-lg bg-zinc-900/40 border border-white/5 p-2.5">
+    <div class="flex items-center justify-between gap-2">
+      <div class="min-w-0"><div class="text-xs font-semibold flex items-center gap-1.5">${esc(m.title)}<span id="fd_${m.key}" class="hidden w-1.5 h-1.5 rounded-full"></span></div>
+      <div id="fn_${m.key}" class="text-[10px] text-zinc-500 truncate">${esc(m.about)}</div></div>${tri}</div>${par}${model}</div>`;
+}
+function buildPanel() {
+  $('repairMods').innerHTML = REPAIR.map(modRow).join('');
+  $('enhanceMods').innerHTML = ENHANCE.map(modRow).join('');
+  document.querySelectorAll('.tri').forEach(t => {
+    S.tri[t.dataset.mod] = 'auto';
+    t.querySelectorAll('button').forEach(b => b.onclick = () => setTri(t.dataset.mod, b.dataset.v));
+    setTri(t.dataset.mod, 'auto');
+  });
+  $('stemSliders').innerHTML = `<div class="text-[10px] text-zinc-500 leading-snug pb-1">Запись делится на 6 партий: можно вытащить вокал, убрать гул баса и т.п. Стэмы тоже можно скачать.</div>` +
+    STEMS.map(([k, t, c]) => `<label class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" style="background:${c}"></span><span class="text-[11px] text-zinc-300 w-20">${t}</span>
+      <input id="st_${k}" type="range" min="-12" max="12" step="0.5" value="0" class="flex-1 accent-pink-500" oninput="$('stv_${k}').textContent = (+this.value > 0 ? '+' : '') + this.value + ' дБ'">
+      <span id="stv_${k}" class="text-[10px] font-mono text-zinc-400 w-12 text-right">0 дБ</span></label>`).join('') +
+    `<label class="flex items-center justify-between pt-1"><span class="text-[11px] text-zinc-300">Убрать комнату с вокала <span class="text-zinc-500">(de-reverb)</span></span><input id="stDereverb" type="checkbox" class="accent-pink-500"></label>`;
+}
+function setTri(k, v) {
+  S.tri[k] = v;
+  document.querySelectorAll(`.tri[data-mod="${k}"] button`).forEach(b => b.classList.toggle('active', b.dataset.v === v));
+}
+function segInit(id, key, cb) {
+  $(id).querySelectorAll('button').forEach(b => b.onclick = () => { S[key] = b.dataset.v; segSet(id, b.dataset.v); cb && cb(); });
+}
+function segSet(id, v) { $(id).querySelectorAll('button').forEach(x => x.classList.toggle('active', x.dataset.v === v)); }
+
+function renderSources() {
+  const src = (S.sys && S.sys.sources) || {};
+  $('sourceChips').innerHTML = Object.entries(src).map(([k, v]) =>
+    `<button onclick="pickSource('${k}')" class="chip text-[11px] px-2.5 py-1 rounded-full border border-white/10 text-zinc-400 hover:text-white ${S.source === k ? 'active' : ''}">${esc(v.title)}</button>`).join('');
+  $('sourceAbout').textContent = (src[S.source] || {}).about || '';
+  const g = S.man && S.man.analysis && S.man.analysis.source_guess;
+  $('sourceGuess').textContent = g ? 'похоже на: ' + ((src[g] || {}).title || g) : '';
+}
+function pickSource(k) { S.source = k; renderSources(); }
+
+function collectOptions(preview) {
+  const tri = k => ({ auto: 'auto', on: true, off: false })[S.tri[k]];
+  const pv = k => +$('p_' + k).value;
+  const o = {
+    source: S.source, engine: S.engine, device: S.device, preview: !!preview,
+    preview_start: $('prevStart').value === '' ? null : +$('prevStart').value,
+    hum: { on: tri('hum') }, clicks: { on: tri('clicks'), sensitivity: pv('clicks') },
+    crackle: { on: tri('crackle'), sensitivity: pv('crackle') }, declip: { on: tri('declip') },
+    wow: { on: tri('wow'), strength: pv('wow') }, azimuth: { on: tri('azimuth') },
+    denoise: { on: tri('denoise'), amount: pv('denoise'), model: $('denoiseModel').value, polish_db: +$('p_polish').value },
+    bass: { on: tri('bass'), amount: pv('bass') }, bandwidth: { on: tri('bandwidth'), amount: pv('bandwidth') },
+    apollo: { on: tri('apollo') }, trim: { on: tri('trim') }, guard: { on: S.tri.guard !== 'off' },
+    tone: { on: S.toneMode === 'off' ? false : 'auto', mode: S.toneMode, style: S.style, amount: +$('toneAmount').value },
+    stems: { on: $('stemsOn').checked, dereverb: $('stDereverb').checked },
+    width: +$('widthR').value,
+    master: { on: $('masterOn').checked, intensity: S.intensity, lufs: $('lufsSel').value === '' ? null : +$('lufsSel').value },
+  };
+  STEMS.forEach(([k]) => o.stems[k + '_db'] = +$('st_' + k).value);
+  return o;
+}
+function applyOptions(o) {
+  if (!o) return;
+  const tv = v => v === true ? 'on' : v === false ? 'off' : 'auto';
+  S.source = o.source || 'auto'; S.engine = o.engine || 'auto'; S.device = o.device || 'auto';
+  [...REPAIR, ...ENHANCE].forEach(m => { if (o[m.key]) setTri(m.key, tv(o[m.key].on)); });
+  const setP = (k, v) => { if (v != null && $('p_' + k)) { $('p_' + k).value = v; $('p_' + k).oninput && $('p_' + k).oninput(); } };
+  setP('clicks', o.clicks?.sensitivity); setP('crackle', o.crackle?.sensitivity); setP('wow', o.wow?.strength);
+  setP('denoise', o.denoise?.amount); setP('bass', o.bass?.amount); setP('bandwidth', o.bandwidth?.amount); setP('polish', o.denoise?.polish_db);
+  if ($('denoiseModel')) $('denoiseModel').value = ['denoise','denoise_aggr'].includes(o.denoise?.model) ? o.denoise.model : 'auto';
+  S.toneMode = o.tone?.mode || 'target'; S.style = o.tone?.style || 'balanced';
+  if (o.tone?.amount != null) { $('toneAmount').value = o.tone.amount; $('toneAmount').oninput(); }
+  $('stemsOn').checked = !!(o.stems && o.stems.on === true); $('stDereverb').checked = !!o.stems?.dereverb;
+  STEMS.forEach(([k]) => { const v = o.stems?.[k + '_db']; if (v != null) { $('st_' + k).value = v; $('st_' + k).oninput(); } });
+  $('widthR').value = o.width || 1; $('widthR').oninput();
+  $('masterOn').checked = o.master?.on !== false; S.intensity = o.master?.intensity || 'medium';
+  $('lufsSel').value = o.master?.lufs == null ? '' : String(o.master.lufs);
+  segSet('engineSeg', S.engine); segSet('deviceSeg', S.device); segSet('styleSeg', S.style); segSet('toneModeSeg', S.toneMode); segSet('intensitySeg', S.intensity);
+  renderSources(); updateRefBox(); updateHints();
+}
+function updateHints() {
+  $('intHint').textContent = { low: '−16 LUFS, 1.3:1', medium: '−14 LUFS, 1.6:1', high: '−11 LUFS, 2.2:1' }[S.intensity];
+  const s = S.sys;
+  const gpu = s && s.kind !== 'cpu';
+  $('engineNote').textContent = S.engine === 'dsp' ? 'Только классические алгоритмы: быстро везде, но шумодав и восстановление низа слабее.'
+    : S.engine === 'ai' && !gpu ? 'Нейросети на процессоре: качество максимальное, но 5-минутный трек обрабатывается 20–40 минут.'
+    : gpu ? 'Видеокарта найдена: шумодав, стэмы и Apollo — нейросетями (трек 5 мин ≈ 1.5–3 мин).'
+    : 'Видеокарты нет: используются быстрые DSP-алгоритмы. «Всегда» включит нейросети (медленно).';
+}
+
+// ============================================================ system
+async function loadSystem() {
+  try {
+    S.sys = await api('/api/system');
+    const s = S.sys;
+    $('sysKind').textContent = s.kind === 'cpu' ? 'CPU' : 'GPU';
+    $('sysKind').className = s.kind === 'cpu' ? 'text-amber-400' : 'text-green-400';
+    $('sysName').textContent = s.name; $('sysName').title = s.label;
+    $('sysMem').textContent = (s.vram_gb ? s.vram_gb.toFixed(0) + ' GB / ' : '') + (s.ram_gb ? s.ram_gb.toFixed(0) + ' GB' : '—');
+    $('sysBackend').textContent = s.kind === 'cpu' ? `CPU ×${s.threads}` : s.backend;
+    $('sysVersion').textContent = `Recover Studio ${s.version} · torch ${s.torch || '—'}${s.colab ? ' · Colab' : ''}`;
+    renderSources(); updateHints();
+    if (S.view === 'projects' || (!S.pid && S.view === 'new')) render();
+    if (Object.values(s.downloads || {}).some(d => d.status === 'running')) setTimeout(loadSystem, 1500);
+  } catch (e) { $('sysName').textContent = 'сервер недоступен'; }
+}
+
+// ============================================================ upload / import / reference
+const dz = $('dropZone');
+dz.onclick = () => $('fileInput').click();
+$('fileInput').onchange = e => e.target.files[0] && upload(e.target.files[0]);
+['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('drop-hover'); }));
+['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('drop-hover'); }));
+dz.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) upload(f); });
+document.body.addEventListener('dragover', e => e.preventDefault());
+document.body.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) upload(f); });
+
+function sendFile(url, file, bar, fill) {
+  return new Promise((res, rej) => {
+    if (bar) { bar.classList.remove('hidden'); fill.style.width = '0%'; }
+    const x = new XMLHttpRequest();
+    x.open('POST', url);
+    x.upload.onprogress = e => { if (fill && e.lengthComputable) fill.style.width = (100 * e.loaded / e.total) + '%'; };
+    x.onload = () => { bar && bar.classList.add('hidden'); let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {}
+      x.status === 200 ? res(j) : rej(new Error(j.error || x.status)); };
+    x.onerror = () => { bar && bar.classList.add('hidden'); rej(new Error('ошибка соединения')); };
+    x.send(file);
+  });
+}
+async function upload(file) {
+  try {
+    const j = await sendFile('/api/upload?name=' + encodeURIComponent(file.name), file, $('uploadBar'), $('uploadFill'));
+    S.source = 'auto';
+    await openProject(j.id, 'analysis'); toast('Трек загружен — идёт диагностика');
+  } catch (e) { toast('Ошибка загрузки: ' + e.message); }
+}
+async function importPath() {
+  const p = $('pathInput').value.trim(); if (!p) return;
+  try { const j = await api('/api/import', { method: 'POST', body: JSON.stringify({ path: p }) }); $('pathInput').value = ''; S.source = 'auto'; await openProject(j.id, 'analysis'); }
+  catch (e) { toast(e.message); }
+}
+$('refInput').onchange = async e => {
+  const f = e.target.files[0]; if (!f || !S.pid) return;
+  try { await sendFile(`/api/projects/${S.pid}/reference?name=` + encodeURIComponent(f.name), f); S.man = await api('/api/projects/' + S.pid); updateRefBox(); toast('Референс загружен'); }
+  catch (err) { toast(err.message); }
+  e.target.value = '';
+};
+async function deleteRef() { await api(`/api/projects/${S.pid}/reference/delete`, { method: 'POST' }); S.man = await api('/api/projects/' + S.pid); updateRefBox(); }
+function updateRefBox() {
+  $('refBox').classList.toggle('hidden', S.toneMode !== 'reference');
+  const r = S.man && S.man.reference;
+  $('refName').textContent = r ? r.name : (S.pid ? 'не выбран' : 'сначала загрузите трек');
+  $('refDel').classList.toggle('hidden', !r);
+}
+
+// ============================================================ project
+async function openProject(pid, view) {
+  stopAudio(); S.bufs = {}; S.loadedKey = null;
+  S.pid = pid;
+  S.man = await api('/api/projects/' + pid);
+  try { localStorage.setItem('rcs_last', pid); } catch (e) {}
+  const res = S.man.results || {};
+  S.kind = res.full ? 'full' : 'preview';
+  if (S.man.options) applyOptions(S.man.options); else { S.source = 'auto'; renderSources(); updateRefBox(); }
+  renderTrackCard();
+  const running = S.man.job && ['queued','running'].includes(S.man.job.status);
+  if (running) startPolling(); else { $('progressBox').classList.add('hidden'); setBadge(S.man.status); }
+  setView(view || (res.full || res.preview ? 'compare' : 'analysis'));
+}
+function renderTrackCard() {
+  const m = S.man;
+  $('trackCard').classList.toggle('hidden', !m);
+  $('btnRun').disabled = $('btnPreview').disabled = !m;
+  $('btnRunText').textContent = m ? 'Восстановить весь трек' : 'Сначала выберите трек';
+  if (!m) return;
+  $('trackName').textContent = m.name;
+  const a = m.analysis || {};
+  $('trackMeta').textContent = [m.source_name, m.duration ? fmtT(m.duration) : null, a.source_sr ? a.source_sr + ' Гц' : null, a.mono ? 'моно' : null].filter(Boolean).join(' · ');
+  renderFindingDots();
+}
+function renderFindingDots() {
+  const F = {}; ((S.man && S.man.analysis && S.man.analysis.findings) || []).forEach(f => F[f.key] = f);
+  [...REPAIR, ...ENHANCE].forEach(m => {
+    const f = m.f.map(k => F[k]).find(Boolean);
+    const dot = $('fd_' + m.key), note = $('fn_' + m.key);
+    if (!dot) return;
+    if (f) { dot.classList.remove('hidden'); dot.style.background = SEV_DOT[f.severity]; note.textContent = f.text; note.className = 'text-[10px] truncate ' + (f.severity >= 2 ? 'text-orange-300' : 'text-amber-200/80'); note.title = f.text; }
+    else { dot.classList.add('hidden'); note.textContent = m.about; note.className = 'text-[10px] text-zinc-500 truncate'; }
+  });
+}
+function setBadge(st) {
+  const b = $('panelStatusBadge');
+  const map = { running: ['RUNNING','bg-pink-500/10 text-pink-400 border-pink-500/20'], queued: ['QUEUED','bg-amber-500/10 text-amber-400 border-amber-500/20'],
+    done: ['DONE','bg-green-500/10 text-green-400 border-green-500/20'], preview: ['PREVIEW','bg-blue-500/10 text-blue-400 border-blue-500/20'],
+    analyzed: ['ANALYZED','bg-blue-500/10 text-blue-400 border-blue-500/20'], error: ['ERROR','bg-red-500/10 text-red-400 border-red-500/20'],
+    cancelled: ['CANCELLED','bg-zinc-500/10 text-zinc-400 border-zinc-500/20'] };
+  const [t, c] = map[st] || ['READY','bg-green-500/10 text-green-400 border-green-500/20'];
+  b.textContent = t; b.className = 'text-[10px] border px-2 py-0.5 rounded-full font-mono ' + c;
+}
+
+// ============================================================ run / progress
+async function startRun(preview) {
+  if (!S.pid) return;
+  if (S.toneMode === 'reference' && !(S.man && S.man.reference)) return toast('Загрузите референс или выберите «Эталон»');
+  try {
+    await api(`/api/projects/${S.pid}/run`, { method: 'POST', body: JSON.stringify(collectOptions(preview)) });
+    S.logSince = 0; $('logBox').textContent = ''; startPolling();
+  } catch (e) { toast(e.message); }
+}
+async function cancelRun() { if (S.pid) await api(`/api/projects/${S.pid}/cancel`, { method: 'POST' }); }
+function toggleLog() { $('logBox').classList.toggle('hidden'); }
+function startPolling() {
+  clearInterval(S.poll);
+  $('progressBox').classList.remove('hidden');
+  S.logSince = 0; $('logBox').textContent = '';
+  const pid = S.pid;
+  const tick = async () => {
+    if (S.pid !== pid) return clearInterval(S.poll);
+    let j; try { j = await api(`/api/jobs/${pid}?since=${S.logSince}`); } catch (e) { return; }
+    if (j.status === 'none') { clearInterval(S.poll); $('progressBox').classList.add('hidden'); return; }
+    S.logSince = j.log_len;
+    if (j.log && j.log.length) { const lb = $('logBox'); lb.textContent += j.log.join('\n') + '\n'; lb.scrollTop = lb.scrollHeight; }
+    $('progFill').style.width = (100 * j.progress).toFixed(1) + '%';
+    $('progStep').textContent = j.step;
+    $('progTitle').textContent = { analyze: 'Диагностика…', preview: 'Превью 30 с…', full: 'Восстановление…' }[j.kind] + ' ' + Math.round(100 * j.progress) + '%';
+    $('stepList').innerHTML = (j.steps || []).map(s => {
+      const ic = { wait: '<span class="text-zinc-600">○</span>', run: '<span class="text-pink-400 animate-pulse">●</span>', done: '<span class="text-green-400">✓</span>', skip: '<span class="text-zinc-600">–</span>', error: '<span class="text-red-400">✕</span>' }[s.state];
+      return `<div class="flex gap-2 ${s.state === 'skip' || s.state === 'wait' ? 'text-zinc-500' : 'text-zinc-300'}"><span class="w-3 text-center">${ic}</span><span class="flex-shrink-0">${esc(s.title)}</span><span class="text-zinc-500 truncate" title="${esc(s.note)}">${esc(s.note || '')}</span></div>`;
+    }).join('');
+    setBadge(j.status);
+    $('progDot').className = 'w-2 h-2 rounded-full flex-shrink-0 ' + (j.status === 'running' || j.status === 'queued' ? 'bg-pink-500 animate-ping' : j.status === 'done' ? 'bg-green-500' : 'bg-red-500');
+    if (!['queued','running'].includes(j.status)) {
+      clearInterval(S.poll);
+      S.man = await api('/api/projects/' + pid);
+      renderTrackCard(); setBadge(S.man.status); renderSources();
+      if (j.status === 'done') {
+        if (j.kind === 'analyze') { toast('Диагностика готова'); if (!S.man.options) autoFromAnalysis(); setView('analysis'); }
+        else { S.kind = j.kind; S.loadedKey = null; toast(j.kind === 'preview' ? 'Превью готово — слушайте A/B' : 'Готово! Трек восстановлен'); setView('compare'); }
+      } else if (j.status === 'error') toast('Ошибка: ' + j.error, 6000);
+    }
+  };
+  tick(); S.poll = setInterval(tick, 900);
+}
+function autoFromAnalysis() { renderSources(); }
+
+// ============================================================ views
+function setView(v) {
+  S.view = v;
+  document.querySelectorAll('.navbtn').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  render();
+}
+function setKind(k) { S.kind = k; S.loadedKey = null; stopAudio(); render(); }
+function needProject(title) {
+  return `<div class="h-full flex flex-col items-center justify-center text-center text-zinc-500 space-y-3 py-20">
+    <div class="text-5xl">📀</div><div class="text-sm">${title}</div>
+    <button onclick="setView('projects')" class="text-xs text-pink-400 hover:underline">Открыть проект</button></div>`;
+}
+function curRes() { const r = (S.man && S.man.results) || {}; return r[S.kind] || r.full || r.preview || null; }
+function render() {
+  const body = $('viewBody'), res = curRes(), m = S.man;
+  const R = (m && m.results) || {};
+  $('kindSwitch').classList.toggle('hidden', !(R.full && R.preview) || !['compare','export'].includes(S.view));
+  document.querySelectorAll('.kbtn').forEach(b => b.className = 'kbtn text-[11px] px-3 py-1.5 rounded-lg ' + (b.dataset.v === (res && res.kind) ? 'bg-white/10 text-white' : 'text-zinc-400'));
+  $('playerBar').classList.toggle('hidden', !(res && S.view === 'compare'));
+  if (S.view === 'new') return renderNew(body);
+  if (S.view === 'projects') return renderProjects(body);
+  if (!m) { $('viewTitle').textContent = 'Recover Studio'; $('viewSub').textContent = ''; body.innerHTML = needProject('Загрузите запись слева'); return; }
+  $('viewTitle').textContent = m.name;
+  if (S.view === 'analysis') return renderAnalysis(body);
+  if (!res) { $('viewSub').textContent = 'Ещё не обработан'; body.innerHTML = needProject('Нажмите «Превью 30 с» или «Восстановить весь трек»'); return; }
+  if (S.view === 'compare') return renderCompare(body, res);
+  if (S.view === 'export') return renderExport(body, res);
+}
+
+function renderNew(body) {
+  $('viewTitle').textContent = 'Recover Studio';
+  $('viewSub').textContent = 'Восстановление старых записей с кассет, пластинок и плёнки';
+  const card = (ic, t, d) => `<div class="bg-suno-card border border-white/5 rounded-2xl p-4 space-y-1.5"><div class="text-2xl">${ic}</div><div class="text-sm font-semibold">${t}</div><div class="text-[11px] text-zinc-500 leading-snug">${d}</div></div>`;
+  body.innerHTML = `<div class="space-y-6 fade-in">
+    <div class="rounded-2xl p-6 bg-gradient-to-br from-orange-500/15 via-pink-600/10 to-purple-600/10 border border-pink-500/20">
+      <div class="text-lg font-bold mb-1">Как это работает</div>
+      <ol class="text-xs text-zinc-300 space-y-1.5 list-decimal pl-4">
+        <li><b>Загрузите</b> оцифровку слева — студия сразу проведёт <b>диагностику</b>: гул, щелчки, треск, шум, детонация, срезанные частоты, клиппинг.</li>
+        <li>Проверьте носитель и модули (по умолчанию всё «Авто» — включено только то, что нужно этой записи).</li>
+        <li>Нажмите <b>«Превью 30 с»</b> и сравните A/B. Подберите характер и интенсивность мастеринга.</li>
+        <li><b>«Восстановить весь трек»</b> → скачайте WAV (44.1/48/96 кГц, 16/24/32 бит).</li>
+      </ol>
+    </div>
+    <div class="grid grid-cols-3 gap-3">
+      ${card('🔧', '1 · Ремонт', 'Гул 50/60 Гц, щелчки и треск (AR-интерполяция), клиппинг, детонация, азимут ленты, шумоподавление нейросетью Mel-Band RoFormer.')}
+      ${card('✨', '2 · Улучшение', 'Восстановление низа по стэмам (BS-RoFormer), дорисовка верхов, Apollo для MP3, тональный баланс по эталону или референсу.')}
+      ${card('🎚', '3 · Мастеринг', 'Как в LANDR: характер (тёплый / баланс / открытый), интенсивность, громкость LUFS, true-peak лимитер −1 dBTP.')}
+    </div>
+    <div class="text-[11px] text-zinc-600">Всё работает локально: запись никуда не отправляется. Space — пауза, 1/2/3 — переключение A/B/C.</div>
+  </div>`;
+}
+
+function renderProjects(body) {
+  $('viewTitle').textContent = 'Проекты'; $('viewSub').textContent = (S.sys && S.sys.projects_dir) || '';
+  body.innerHTML = '<div class="text-xs text-zinc-500">загрузка…</div>';
+  api('/api/projects').then(list => {
+    if (!list.length) { body.innerHTML = needProject('Проектов пока нет'); return; }
+    body.innerHTML = `<div class="space-y-2 fade-in">${list.map(p => `
+      <div class="bg-suno-card border border-white/5 hover:border-white/10 rounded-xl p-3 flex items-center gap-3 cursor-pointer" onclick="openProject('${p.id}')">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center flex-shrink-0">♪</div>
+        <div class="min-w-0 flex-1"><div class="text-sm font-semibold truncate">${esc(p.name)}</div>
+          <div class="text-[11px] text-zinc-500">${esc(p.created)} · ${p.duration ? fmtT(p.duration) : '—'} · ${esc((S.sys?.sources?.[p.source] || {}).title || '')} · дефектов: ${p.findings}</div></div>
+        <span class="text-[10px] px-2 py-0.5 rounded-full border ${p.full ? 'border-green-500/30 text-green-400' : p.preview ? 'border-blue-500/30 text-blue-400' : 'border-white/10 text-zinc-500'}">${p.full ? 'готов' : p.preview ? 'превью' : esc(p.status || '')}</span>
+        <button onclick="event.stopPropagation(); delProject('${p.id}')" class="text-zinc-600 hover:text-red-400 text-xs px-1" title="Удалить">✕</button>
+      </div>`).join('')}</div>`;
+  }).catch(e => body.innerHTML = esc(e.message));
+}
+async function delProject(id) {
+  if (!confirm('Удалить проект вместе с результатами?')) return;
+  try { await api(`/api/projects/${id}/delete`, { method: 'POST' }); if (S.pid === id) { S.pid = null; S.man = null; renderTrackCard(); } render(); } catch (e) { toast(e.message); }
+}
+
+// ---------- analysis
+function tile(label, value, sub, cls = '') {
+  return `<div class="bg-suno-card border border-white/5 rounded-xl p-3"><div class="text-[10px] text-zinc-500 uppercase tracking-wider">${label}</div>
+    <div class="text-lg font-bold ${cls}">${value}</div><div class="text-[10px] text-zinc-500 truncate">${sub || ''}</div></div>`;
+}
+function renderAnalysis(body) {
+  const m = S.man, a = m.analysis;
+  $('viewSub').textContent = 'Диагностика: что не так с записью';
+  if (!a) {
+    const run = m.job && ['queued','running'].includes(m.job.status);
+    body.innerHTML = run ? `<div class="py-20 text-center text-zinc-500 text-sm">Идёт диагностика…</div>`
+      : `<div class="py-20 text-center space-y-3"><div class="text-zinc-500 text-sm">Диагностика ещё не проводилась</div><button onclick="reanalyze()" class="text-xs px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10">Провести диагностику</button></div>`;
+    return;
+  }
+  const src = (S.sys?.sources || {})[a.source_guess] || {};
+  const hum = a.hum && a.hum.f0 ? `${a.hum.f0} Гц` : 'нет';
+  body.innerHTML = `<div class="space-y-5 fade-in">
+    <div class="grid grid-cols-4 gap-3">
+      ${tile('Носитель (авто)', esc(src.title || a.source_guess), esc(src.about || ''))}
+      ${tile('Сигнал / шум', a.snr_db + ' дБ', a.snr_db < 20 ? 'сильный шум' : a.snr_db < 30 ? 'заметный шум' : 'тихо', a.snr_db < 20 ? 'text-orange-400' : '')}
+      ${tile('Полоса', (a.cutoff_hz / 1000).toFixed(1) + ' кГц', a.cutoff_hz < 15500 ? 'верха срезаны' : 'полная', a.cutoff_hz < 11000 ? 'text-orange-400' : '')}
+      ${tile('Громкость', (a.lufs ?? '—') + ' LUFS', 'пик ' + a.true_peak + ' dBTP')}
+      ${tile('Щелчки', a.clicks_per_min + '/мин', 'треск ' + a.crackle_per_min + '/мин', a.clicks_per_min > 500 ? 'text-orange-400' : '')}
+      ${tile('Гул сети', hum, a.hum && a.hum.f0 ? 'гармоник: ' + a.hum.harmonics.length : '')}
+      ${tile('Детонация', '±' + a.wow.wow_cents + ' ц', a.wow.rate_hz ? a.wow.rate_hz + ' Гц, периодичность ' + Math.round(a.wow.periodicity * 100) + '%' : '')}
+      ${tile('Стерео', a.mono ? 'моно' : 'стерео', 'корреляция ' + a.stereo_corr)}
+    </div>
+    <div class="bg-suno-card border border-white/5 rounded-2xl p-4 space-y-2">
+      <div class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Найдено</div>
+      ${a.findings.map(f => `<div class="flex items-center gap-2 text-xs border rounded-lg px-3 py-2 ${SEV[f.severity]}"><span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${SEV_DOT[f.severity]}"></span>${esc(f.text)}</div>`).join('')}
+    </div>
+    <div class="bg-suno-card border border-white/5 rounded-2xl p-4">
+      <div class="flex justify-between items-center mb-2"><div class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Тональный баланс</div>
+        <div class="text-[10px] text-zinc-500 flex gap-3"><span><span class="inline-block w-3 h-0.5 bg-zinc-400 align-middle"></span> запись</span><span><span class="inline-block w-3 h-0.5 align-middle" style="background:#f472b6"></span> эталон</span><span><span class="inline-block w-3 h-0.5 bg-zinc-700 align-middle"></span> шум</span></div></div>
+      ${curveSvg([{ c: a.curve, color: '#a1a1aa', w: 2 }, { c: targetCurve(), color: '#f472b6', w: 1.5, dash: '5 4' }, { c: a.noise_curve, color: '#3f3f46', w: 1.5 }])}
+    </div>
+    <div class="bg-suno-card border border-white/5 rounded-2xl p-4"><div class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Спектрограмма оригинала</div>
+      <canvas id="specA" class="w-full h-40 rounded-lg bg-black"></canvas></div>
+    <div class="flex gap-2"><button onclick="startRun(true)" class="text-xs px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10">▶ Превью 30 с</button>
+      <button onclick="startRun(false)" class="text-xs px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 font-semibold">Восстановить весь трек</button>
+      <button onclick="reanalyze()" class="text-xs px-3 py-2 rounded-xl text-zinc-500 hover:text-white ml-auto">Повторить диагностику</button></div>
+  </div>`;
+  drawSpectro('specA', m.source);
+}
+async function reanalyze() { try { await api(`/api/projects/${S.pid}/analyze`, { method: 'POST' }); startPolling(); } catch (e) { toast(e.message); } }
+function targetCurve() {
+  const s = S.sys; if (!s) return null;
+  return s.target.map((v, i) => v + (s.tilts[S.style] || s.tilts.balanced)[i]);
+}
+function curveSvg(lines, h = 200) {
+  const s = S.sys; if (!s) return '';
+  const G = s.grid, W = 900, x = f => (Math.log10(f) - Math.log10(20)) / (Math.log10(20000) - Math.log10(20)) * W;
+  const lo = -45, hi = 25, y = v => h - (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo) * h;
+  const grid = [50, 100, 200, 500, 1000, 2000, 5000, 10000].map(f => `<line x1="${x(f)}" x2="${x(f)}" y1="0" y2="${h}" stroke="#27272a"/><text x="${x(f) + 3}" y="${h - 4}" fill="#52525b" font-size="10">${f >= 1000 ? f / 1000 + 'k' : f}</text>`).join('')
+    + [-30, -15, 0, 15].map(v => `<line x1="0" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="#1f1f23"/><text x="3" y="${y(v) - 3}" fill="#52525b" font-size="10">${v > 0 ? '+' : ''}${v} дБ</text>`).join('');
+  const path = (c) => c.map((v, i) => `${i ? 'L' : 'M'}${x(G[i]).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  return `<svg viewBox="0 0 ${W} ${h}" class="w-full" style="height:${h}px" preserveAspectRatio="none">${grid}
+    ${lines.filter(l => l.c).map(l => `<path d="${path(l.c)}" fill="none" stroke="${l.color}" stroke-width="${l.w}" ${l.dash ? `stroke-dasharray="${l.dash}"` : ''} vector-effect="non-scaling-stroke"/>`).join('')}</svg>`;
+}
+// magma-like colormap
+const CMAP = (() => { const st = [[0,0,4],[40,11,84],[101,21,110],[159,42,99],[212,72,66],[245,125,21],[250,193,39],[252,255,164]]; const out = [];
+  for (let i = 0; i < 256; i++) { const t = i / 255 * (st.length - 1), k = Math.min(st.length - 2, Math.floor(t)), f = t - k; out.push(st[k].map((v, j) => Math.round(v + (st[k + 1][j] - v) * f))); } return out; })();
+async function drawSpectro(id, rel) {
+  const cv = $(id); if (!cv) return;
+  try {
+    const d = await api(`/api/spectro/${S.pid}/${rel.split('/').map(encodeURIComponent).join('/')}`);
+    if (!$(id)) return;
+    cv.width = d.cols; cv.height = d.rows;
+    const ctx = cv.getContext('2d'), img = ctx.createImageData(d.cols, d.rows);
+    for (let r = 0; r < d.rows; r++) { const row = d.data[r], yy = d.rows - 1 - r;
+      for (let c = 0; c < d.cols; c++) { const v = Math.max(0, Math.min(255, (row[c] - 60) * 1.45)), p = (yy * d.cols + c) * 4, col = CMAP[v | 0];
+        img.data[p] = col[0]; img.data[p + 1] = col[1]; img.data[p + 2] = col[2]; img.data[p + 3] = 255; } }
+    ctx.putImageData(img, 0, 0);
+  } catch (e) { }
+}
+
+// ---------- compare
+function renderCompare(body, res) {
+  const b = res.before, a = res.after;
+  $('viewSub').textContent = (res.kind === 'preview' ? `Превью ${fmtT(res.offset)}–${fmtT(res.offset + res.duration)}` : 'Весь трек') + ` · ${res.device} · ${res.created}`;
+  const row = (label, k, unit, better) => {
+    const bv = b[k], av = a[k];
+    const good = better === 'up' ? av > bv : better === 'down' ? av < bv : null;
+    return `<tr class="border-t border-white/5"><td class="py-1.5 text-zinc-400">${label}</td><td class="py-1.5 text-right font-mono text-zinc-400">${bv ?? '—'} ${unit}</td>
+      <td class="py-1.5 text-center text-zinc-600">→</td><td class="py-1.5 font-mono ${good === true ? 'text-green-400' : good === false ? 'text-amber-300' : 'text-white'}">${av ?? '—'} ${unit}</td></tr>`;
+  };
+  const steps = (res.steps || []).filter(s => s.state === 'done' && !['load','analyze','save'].includes(s.id));
+  body.innerHTML = `<div class="space-y-5 fade-in">
+    <div class="bg-suno-card border border-white/5 rounded-2xl p-4 space-y-3">
+      <div class="flex justify-between items-center"><div class="text-xs font-bold text-zinc-400 uppercase tracking-wider">A/B прослушивание</div>
+        <div id="abLoading" class="text-[10px] text-zinc-500"></div></div>
+      <div class="relative h-28 rounded-lg bg-black/40 overflow-hidden cursor-pointer" id="waveBox" onclick="waveClick(event)">
+        <canvas id="waveCv" class="absolute inset-0 w-full h-full"></canvas>
+        <div id="playhead" class="absolute top-0 bottom-0 w-px bg-white/80 pointer-events-none" style="left:0"></div>
+      </div>
+      <div class="text-[10px] text-zinc-500">Переключайте <b>A / B / C</b> внизу во время игры — смена мгновенная, на той же секунде. «Выровнять громкость» убирает обман слуха «громче = лучше».</div>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="bg-suno-card border border-white/5 rounded-2xl p-4"><div class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">До / после</div>
+        <table class="w-full text-xs"><tbody>
+          ${row('Сигнал / шум', 'snr_db', 'дБ', 'up')}
+          ${row('Отклонение тона', 'tone_error_db', 'дБ', 'down')}
+          ${row('Полоса', 'cutoff_hz', 'Гц', 'up')}
+          ${row('Гул (индекс)', 'hum_score', '', 'down')}
+          ${row('Громкость', 'lufs', 'LUFS')}
+          ${row('True peak', 'true_peak', 'dBTP')}
+          ${row('Стерео-корреляция', 'stereo_corr', '')}
+        </tbody></table>
+        ${res.trimmed && (res.trimmed[0] || res.trimmed[1]) ? `<div class="text-[10px] text-zinc-500 mt-2">Обрезано: ${res.trimmed[0]} с в начале, ${res.trimmed[1]} с в конце</div>` : ''}</div>
+      <div class="bg-suno-card border border-white/5 rounded-2xl p-4"><div class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Что сделано</div>
+        <div class="space-y-1 text-[11px] max-h-52 overflow-y-auto">${steps.map(s => `<div class="flex gap-2"><span class="text-green-400">✓</span><span class="text-zinc-300 flex-shrink-0">${esc(s.title)}</span><span class="text-zinc-500 truncate" title="${esc(s.note)}">${esc(s.note)}</span></div>`).join('')}</div>
+        <button onclick="showReport()" class="text-[11px] text-pink-400 hover:underline mt-2">Полный отчёт</button></div>
+    </div>
+    <div class="bg-suno-card border border-white/5 rounded-2xl p-4">
+      <div class="flex justify-between items-center mb-2"><div class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Тональный баланс</div>
+        <div class="text-[10px] text-zinc-500 flex gap-3"><span><span class="inline-block w-3 h-0.5 bg-zinc-500 align-middle"></span> было</span><span><span class="inline-block w-3 h-0.5 align-middle" style="background:#fb923c"></span> стало</span><span><span class="inline-block w-3 h-0.5 align-middle" style="background:#f472b6"></span> цель</span></div></div>
+      ${curveSvg([{ c: b.curve, color: '#71717a', w: 1.5 }, { c: targetCurve(), color: '#f472b6', w: 1.2, dash: '5 4' }, { c: a.curve, color: '#fb923c', w: 2 }])}
+    </div>
+    <div class="bg-suno-card border border-white/5 rounded-2xl p-4 space-y-2"><div class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Спектрограммы: оригинал → восстановлено</div>
+      <canvas id="specB" class="w-full h-36 rounded-lg bg-black"></canvas><canvas id="specC" class="w-full h-36 rounded-lg bg-black"></canvas></div>
+  </div>`;
+  drawSpectro('specB', res.previews.original); drawSpectro('specC', res.files.restored);
+  loadAB(res);
+}
+async function showReport() {
+  const res = curRes(); if (!res) return;
+  try { const r = await fetch(fileUrl(res.kind + '/report.txt')); $('textBody').textContent = await r.text(); $('textTitle').textContent = 'Отчёт о реставрации'; $('textModal').classList.remove('hidden'); } catch (e) { toast(e.message); }
+}
+function closeText() { $('textModal').classList.add('hidden'); }
+
+// ---------- export
+function renderExport(body, res) {
+  $('viewSub').textContent = 'Скачать восстановленный трек в WAV';
+  const stems = res.stems || [];
+  body.innerHTML = `<div class="space-y-5 fade-in max-w-2xl">
+    <div class="bg-suno-card border border-white/5 rounded-2xl p-4 space-y-3">
+      <div class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Формат WAV</div>
+      <div class="grid grid-cols-2 gap-3 text-xs">
+        <label class="space-y-1"><span class="text-zinc-400">Частота</span><select id="exSr" class="w-full bg-zinc-900 border border-white/10 rounded-lg px-2 py-1.5 outline-none">
+          <option value="44100">44.1 кГц (CD, стриминг)</option><option value="48000">48 кГц (видео)</option><option value="96000">96 кГц (архив)</option></select></label>
+        <label class="space-y-1"><span class="text-zinc-400">Разрядность</span><select id="exBits" class="w-full bg-zinc-900 border border-white/10 rounded-lg px-2 py-1.5 outline-none">
+          <option value="16">16 бит (CD, с дизерингом)</option><option value="24" selected>24 бит (студия)</option><option value="32">32 бит float</option></select></label>
+      </div>
+      ${res.mono_out ? '<div class="text-[10px] text-zinc-500">Запись моно — WAV будет моно.</div>' : ''}
+    </div>
+    <div class="grid grid-cols-1 gap-2">
+      ${dlBtn('restored', '⬇ Восстановленный трек (мастер)', 'ремонт + улучшение + мастеринг — готов к публикации', true)}
+      ${dlBtn('repaired', '⬇ Только ремонт, без мастеринга', 'для своего сведения/мастеринга: убраны дефекты, тембр и громкость не тронуты')}
+      ${dlBtn('zip', '⬇ Всё одним ZIP', 'оба WAV' + (stems.length ? ' + стэмы' : '') + ' + отчёт')}
+    </div>
+    ${stems.length ? `<div class="bg-suno-card border border-white/5 rounded-2xl p-4 space-y-2"><div class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Стэмы (24 бит, 44.1 кГц)</div>
+      ${stems.map(s => `<a href="${fileUrl(s.file, true)}" class="flex items-center justify-between text-xs px-3 py-2 rounded-lg bg-zinc-900/60 hover:bg-white/5 border border-white/5"><span>${esc(s.title)}</span><span class="text-zinc-500">${esc(s.file.split('/').pop())}</span></a>`).join('')}</div>` : ''}
+    <div class="flex gap-3 text-[11px]"><button onclick="showReport()" class="text-pink-400 hover:underline">Отчёт</button>
+      ${S.sys && !S.sys.colab ? `<button onclick="api('/api/projects/${S.pid}/open',{method:'POST'})" class="text-zinc-400 hover:text-white">Открыть папку проекта</button>` : ''}</div>
+  </div>`;
+}
+function dlBtn(what, title, sub, primary) {
+  return `<button onclick="download('${what}')" class="text-left rounded-xl p-3.5 border ${primary ? 'bg-gradient-to-r from-orange-500/20 to-pink-600/20 border-pink-500/30 hover:brightness-125' : 'bg-suno-card border-white/5 hover:border-white/15'}">
+    <div class="text-sm font-semibold">${title}</div><div class="text-[11px] text-zinc-500">${sub}</div></button>`;
+}
+function download(what) {
+  const res = curRes(); if (!res) return;
+  const sr = $('exSr').value, bits = $('exBits').value;
+  toast('Готовлю файл…');
+  location.href = `/api/download/${S.pid}?kind=${res.kind}&what=${what}&sr=${sr}&bits=${bits}`;
+}
+
+// ============================================================ A/B audio (WebAudio, sample-accurate switching)
+async function loadAB(res) {
+  const key = S.pid + '|' + res.kind + '|' + res.created;
+  if (S.loadedKey === key && Object.keys(S.bufs).length) { drawWave(); updateAbButtons(); return; }
+  stopAudio(); S.bufs = {}; S.loadedKey = key;
+  if (!S.ctx) S.ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const parts = [['original', res.previews.original], ['restored', res.previews.restored], ['repaired', res.previews.repaired]];
+  $('abLoading').textContent = 'загрузка аудио…';
+  await Promise.all(parts.map(async ([k, rel]) => {
+    try { const r = await fetch(fileUrl(rel)); const ab = await r.arrayBuffer(); if (S.loadedKey !== key) return; S.bufs[k] = await S.ctx.decodeAudioData(ab); }
+    catch (e) { console.warn(k, e); }
+  }));
+  if (S.loadedKey !== key) return;
+  $('abLoading').textContent = '';
+  S.dur = Math.max(...Object.values(S.bufs).map(b => b.duration), 0);
+  S.off = 0; $('tDur').textContent = fmtT(S.dur);
+  try { S.peaks = (await api(`/api/peaks/${S.pid}/${res.previews.restored.split('/').map(encodeURIComponent).join('/')}?n=1200`)).peaks; } catch (e) { S.peaks = null; }
+  drawWave(); updateAbButtons(); updateTime();
+}
+function lufsGain(k) {
+  const res = curRes(); if (!res || !$('matchLoud').checked) return 1;
+  const ref = res.after.lufs, b = res.before.lufs;
+  if (k === 'original' && ref != null && b != null) return Math.pow(10, (ref - b) / 20);
+  if (k === 'repaired' && ref != null && res.repaired_lufs != null) return Math.pow(10, (ref - res.repaired_lufs) / 20);
+  return 1;
+}
+function applyGains() {
+  if (!S.ctx) return;
+  const now = S.ctx.currentTime;
+  Object.entries(S.gains).forEach(([k, g]) => { g.gain.cancelScheduledValues(now); g.gain.setTargetAtTime(k === S.ab ? S.vol * Math.min(4, lufsGain(k)) : 0, now, 0.015); });
+}
+function startAudio(at) {
+  stopSources();
+  const ctx = S.ctx; if (!ctx || !Object.keys(S.bufs).length) return;
+  if (ctx.state === 'suspended') ctx.resume();
+  S.off = Math.max(0, Math.min(at ?? S.off, S.dur - 0.05));
+  const when = ctx.currentTime + 0.05;
+  Object.entries(S.bufs).forEach(([k, buf]) => {
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const g = ctx.createGain(); g.gain.value = 0;
+    src.connect(g).connect(ctx.destination);
+    if (S.off < buf.duration) src.start(when, S.off);
+    S.srcs.push(src); S.gains[k] = g;
+  });
+  S.t0 = when - S.off; S.playing = true; applyGains();
+  $('playIcon').classList.add('hidden'); $('pauseIcon').classList.remove('hidden');
+  cancelAnimationFrame(S.raf); const loop = () => { updateTime(); if (S.playing) S.raf = requestAnimationFrame(loop); }; loop();
+}
+function stopSources() { S.srcs.forEach(s => { try { s.stop(); } catch (e) {} }); S.srcs = []; S.gains = {}; }
+function stopAudio() {
+  if (S.playing && S.ctx) S.off = S.ctx.currentTime - S.t0;
+  stopSources(); S.playing = false; cancelAnimationFrame(S.raf);
+  $('playIcon').classList.remove('hidden'); $('pauseIcon').classList.add('hidden');
+}
+function togglePlay() { if (S.playing) stopAudio(); else startAudio(S.off >= S.dur - 0.1 ? 0 : S.off); }
+function curTime() { return S.playing ? S.ctx.currentTime - S.t0 : S.off; }
+function seekTo(t) { if (S.playing) startAudio(t); else { S.off = Math.max(0, Math.min(t, S.dur)); updateTime(); } }
+function seekRel(d) { seekTo(curTime() + d); }
+function setAB(k) { S.ab = k; applyGains(); updateAbButtons(); drawWave(); }
+function updateAbButtons() { document.querySelectorAll('.abbtn').forEach(b => { b.classList.toggle('active', b.dataset.v === S.ab); b.disabled = !S.bufs[b.dataset.v]; }); }
+function updateTime() {
+  const t = curTime();
+  if (S.playing && t >= S.dur) { stopAudio(); S.off = 0; }
+  $('tCur').textContent = fmtT(t);
+  $('seekBar').value = S.dur ? Math.round(1000 * t / S.dur) : 0;
+  const ph = $('playhead'); if (ph && S.dur) ph.style.left = (100 * Math.min(1, t / S.dur)) + '%';
+}
+function waveClick(e) { const r = $('waveBox').getBoundingClientRect(); seekTo((e.clientX - r.left) / r.width * S.dur); }
+function drawWave() {
+  const cv = $('waveCv'); if (!cv) return;
+  const w = cv.width = cv.clientWidth * devicePixelRatio, h = cv.height = cv.clientHeight * devicePixelRatio;
+  const ctx = cv.getContext('2d'); ctx.clearRect(0, 0, w, h);
+  let pk = S.peaks;
+  const buf = S.bufs[S.ab];
+  if (buf) { // peaks of the active version straight from the decoded buffer
+    const d = buf.getChannelData(0), n = 900, step = Math.floor(d.length / n); pk = [];
+    for (let i = 0; i < n; i++) { let m = 0; for (let j = i * step, e = j + step; j < e; j += 8) { const v = Math.abs(d[j]); if (v > m) m = v; } pk.push(m); }
+  }
+  if (!pk) return;
+  const grad = ctx.createLinearGradient(0, 0, w, 0);
+  const cols = { original: ['#71717a', '#a1a1aa'], restored: ['#f97316', '#ec4899'], repaired: ['#3b82f6', '#8b5cf6'] }[S.ab];
+  grad.addColorStop(0, cols[0]); grad.addColorStop(1, cols[1]); ctx.fillStyle = grad;
+  const bw = w / pk.length;
+  pk.forEach((v, i) => { const hh = Math.max(1, v * h * 0.95); ctx.fillRect(i * bw, (h - hh) / 2, Math.max(1, bw - 0.5), hh); });
+}
+window.addEventListener('resize', () => drawWave());
+document.addEventListener('keydown', e => {
+  if (['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  if (e.code === 'Space' && !$('playerBar').classList.contains('hidden')) { e.preventDefault(); togglePlay(); }
+  if (e.key === '1') setAB('original'); if (e.key === '2') setAB('restored'); if (e.key === '3') setAB('repaired');
+});
+
+// ============================================================ init
+buildPanel();
+segInit('engineSeg', 'engine', updateHints); segInit('deviceSeg', 'device'); segInit('styleSeg', 'style', () => { if (S.view === 'analysis' || S.view === 'compare') render(); });
+segInit('toneModeSeg', 'toneMode', updateRefBox); segInit('intensitySeg', 'intensity', updateHints);
+$('toneAmount').oninput = () => $('toneAmountV').textContent = Math.round(100 * $('toneAmount').value) + '%';
+$('widthR').oninput = () => $('widthV').textContent = Math.round(100 * $('widthR').value) + '%';
+updateHints(); renderSources(); updateRefBox();
+loadSystem().then(async () => {
+  const qp = new URLSearchParams(location.search);
+  let last = qp.get('p'); if (!last) { try { last = localStorage.getItem('rcs_last'); } catch (e) {} }
+  if (last) { try { await openProject(last, qp.get('v') || undefined); return; } catch (e) { console.error('open', e && e.stack || e); } }
+  setView('new');
+});
+</script>
+</body>
+</html>

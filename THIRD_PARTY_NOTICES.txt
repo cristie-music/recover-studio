@@ -1,0 +1,73 @@
+RECOVER STUDIO - third party notices
+====================================
+
+Recover Studio's own code (app/, tools/, installers) is original work, EXCEPT the files listed below, which are
+adapted from third-party code. Neural network weights are NOT part of this repository: install.bat / install.sh /
+the Colab notebook download them into models/ from their authors' pages. They belong to their authors; check
+their terms before redistributing the weights or using the results commercially.
+
+1. Apollo - music restoration network (app/studio/apollo.py)
+   Kai Li, Yi Luo. "Apollo: Band-sequence Modeling for High-Quality Audio Restoration" (Tsinghua University /
+   Tencent AI Lab), arXiv:2409.08514. Code and weights: https://github.com/JusperLee/Apollo ,
+   https://huggingface.co/JusperLee/Apollo   License: CC BY-SA 4.0.
+   app/studio/apollo.py is a port of look2hear/models/apollo.py (same layers and parameter names) and is therefore
+   distributed under CC BY-SA 4.0 as well (attribution above, changes: inference-only, no training code,
+   checkpoint loader that does not import omegaconf / pytorch-lightning, mid/side windowed processing).
+   Weights file: pytorch_model.bin (saved as models/apollo_JusperLee.bin).
+
+2. BS-RoFormer and Mel-Band RoFormer network code (app/studio/roformer.py)
+   Inference-only re-implementation, adapted from Restore Studio / RVC Studio (same author), based on:
+     - lucidrains "BS-RoFormer" (MIT)  https://github.com/lucidrains/BS-RoFormer
+     - ZFTurbo "Music-Source-Separation-Training" (MIT)  https://github.com/ZFTurbo/Music-Source-Separation-Training
+
+3. Model weights downloaded at install / first use
+   - Mel-Band RoFormer Denoise and Denoise Aggr, by aufr33:
+       denoise_mel_band_roformer_aufr33_sdr_27.9959.ckpt, denoise_mel_band_roformer_aufr33_aggr_sdr_27.9768.ckpt
+       (+ configs) from the python-audio-separator model-configs release
+       https://github.com/nomadkaraoke/python-audio-separator/releases/tag/model-configs
+       Community UVR models; the weights belong to their author.
+   - BS-RoFormer SW 6 stems by jarredou / undef13 ("BS-Rofo-SW-Fixed.ckpt" + .yaml)
+       https://huggingface.co/enerjazzer/BS-ROFO-SW-Fixed (mirror: https://huggingface.co/ChanTrail/BS-RoFormer)
+       The weights belong to their authors.
+   - Mel-Band RoFormer De-Reverb by anvuew (optional, vocals)
+       https://huggingface.co/anvuew/dereverb_mel_band_roformer   License stated on the model page: GPL-3.0.
+   - Apollo by JusperLee: see 1 (CC BY-SA 4.0).
+
+4. DSP algorithms (app/studio/dsp.py) - own implementation of published methods:
+   least-squares AR interpolation (S. Godsill, P. Rayner, "Digital Audio Restoration", Springer 1998),
+   ITU-R BS.1770 loudness (via pyloudnorm), RBJ Audio EQ Cookbook biquads (R. Bristow-Johnson).
+   The limiter, de-click mask and spectral helpers come from Vocal Cleaner (same author).
+
+5. Web UI
+   - Tailwind CSS standalone build (app/web/vendor/tailwind.js): MIT, https://github.com/tailwindlabs/tailwindcss
+   - Inter font loaded from Google Fonts: SIL Open Font License 1.1
+
+6. Runtime downloaded by the installers (NOT included in this repository)
+   - CPython 3.11 (python-build-standalone builds): Python Software Foundation License
+     https://github.com/astral-sh/python-build-standalone
+   - uv (Linux / macOS / Colab installer): MIT or Apache-2.0
+   - PyTorch: BSD-3-Clause (CUDA builds bundle NVIDIA CUDA runtime libraries under NVIDIA's license)
+   - NumPy, SciPy, scikit-learn: BSD-3-Clause;  librosa: ISC;  numba / llvmlite: BSD-2-Clause
+   - python-soundfile: BSD-3-Clause (bundles libsndfile, LGPL-2.1);  soxr: LGPL-2.1;  PyYAML: MIT
+   - pyloudnorm: MIT
+   - pyngrok (Colab, optional): MIT; ngrok service: ngrok's terms of service
+
+--------------------------------------------------------------------------------
+MIT License (lucidrains/BS-RoFormer, ZFTurbo/Music-Source-Separation-Training,
+nomadkaraoke/python-audio-separator, tailwindcss)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+--------------------------------------------------------------------------------
+CC BY-SA 4.0 (Apollo): https://creativecommons.org/licenses/by-sa/4.0/legalcode
