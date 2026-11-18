@@ -9,7 +9,6 @@ Everything runs locally (Windows, Linux, macOS or Google Colab) and the recordin
 The software is portable Python: one folder, nothing installed system-wide. It detects the hardware automatically
 (NVIDIA CUDA, AMD ROCm, Apple MPS, Intel XPU or plain CPU) and works on all of them.
 
-> Russian guide: [README.txt](README.txt)
 
 ## How it works (Analyze → Repair → Enhance → Master)
 
